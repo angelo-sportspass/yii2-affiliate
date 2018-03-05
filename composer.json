@@ -5,8 +5,8 @@
     "require": {
         "php": ">=5.6",
         "ext-curl": "^7.0",
+        "yiisoft/yii2": "~2.0",
         "linkshare/oauth2-linkshare": "~1.0",
-        "yii2": "~2.0",
         "nesbot/carbon": "~1.21"
     },
     "require-dev": {
