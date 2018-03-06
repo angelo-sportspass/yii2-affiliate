@@ -5,6 +5,7 @@ namespace Affiliate;
 use SimpleXMLElement;
 use app\lib\helpers\Curl;
 use InvalidArgumentException;
+use RuntimeException;
 use Affiliate\Helpers\XMLHelper;
 use Affiliate\Exceptions\MissingFieldException;
 
@@ -132,7 +133,10 @@ class Rakuten
      *
      * @return $token
      */
-    public function refreshToken() {}
+    public function refreshToken()
+    {
+        $token = $this->getToken();
+    }
 
     /**
      * Get Access Token From A text file
@@ -183,10 +187,14 @@ class Rakuten
      * Set Header Request
      * @param $type
      */
-    public function setHeader($type)
+    public function setHeader($type, $accessToken = null)
     {
-        $token = $this->getToken();
-        $this->header[] = 'Authorization: '.$type. ' '. $token->access_token;
+        if (!isset($accessToken)) {
+            $token       = $this->getToken();
+            $accessToken = $token->access_token;
+        }
+
+        $this->header[] = 'Authorization: '.$type. ' '. $accessToken;
     }
 
     /**
@@ -204,16 +212,18 @@ class Rakuten
      */
     public function loadAccessToken()
     {
-        $header[] = 'Authorization: '. self::HEADER_TYPE_BASIC. ' '. self::TOKEN_HEADER;
+        $this->setHeader(self::HEADER_TYPE_BASIC, self::TOKEN_HEADER);
 
         $curl  = new Curl;
 
-        $token = $curl->post(self::BASE_API_URL.self::TOKEN_END_POINT, [
+        $opt   = [
             'grant_type' => $this->grant,
             'username' => $this->username,
             'password' => $this->password,
             'scope' => $this->scope
-        ], $header);
+        ];
+
+        $token = $curl->post(self::BASE_API_URL.self::TOKEN_END_POINT, $opt, $this->getHeader());
 
         $this->saveAccessToken($token);
     }
@@ -235,28 +245,24 @@ class Rakuten
      *
      * @param string $status
      *
-     * @return array
+     * @return object
      */
     public function merchantByAppStatus($status)
     {
-
         $this->setHeader(self::HEADER_TYPE_BEARER);
         $this->setLink(self::MERCHANT_BY_APP_STATUS.'/'.$status);
 
-        $data     = [];
         $curl     = new Curl;
         $response = $curl->get($this->getLink(),  '', $this->getHeader());
 
-        $xmlData  = new SimpleXMLElement(XMLHelper::tidy($response));
-
+        $xmlData       = new SimpleXMLElement(XMLHelper::tidy($response));
         $checkResponse = json_decode($xmlData);
 
         if (isset($checkResponse->fault)) {
             sleep(ceil($this->delay / $this->requestPerMinute));
         }
 
-        pr($xmlData);
-
+        return $xmlData;
     }
 
     /**
@@ -265,7 +271,7 @@ class Rakuten
      *
      * @param int $merchantId The LinkShare Advertiser ID
      *
-     * @return $merchantId
+     * @return object
      */
     public function merchantById($merchantId)
     {
@@ -276,10 +282,13 @@ class Rakuten
         $response = $curl->get($this->getLink(),  '', $this->getHeader());
 
         $xmlData  = new SimpleXMLElement(XMLHelper::tidy($response));
+        $checkResponse = json_decode($xmlData);
 
-        //@todo Implementation here
+        if (isset($checkResponse->fault)) {
+            sleep(ceil($this->delay / $this->requestPerMinute));
+        }
 
-        return $merchantId;
+        return $xmlData;
     }
 
     /**
