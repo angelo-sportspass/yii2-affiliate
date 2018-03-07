@@ -12,7 +12,9 @@ use Affiliate\Exceptions\MissingFieldException;
 class Rakuten
 {
     const BASE_API_URL = 'https://api.rakutenmarketing.com';
-    const API_NAME     = 'linklocator';
+
+    const API_NAME_ADVERTISER_SEARCH = 'advertisersearch';
+    const API_NAME_LINK_LOCATOR      = 'linklocator';
     const API_VERSION  = '1.0';
 
     const TOKEN_END_POINT = '/token';
@@ -79,6 +81,12 @@ class Rakuten
      * @var string
      */
     public $link;
+    /**
+     * Request Parameters
+     *
+     * @var array
+     */
+    public $params = [];
     /**
      * @var string
      */
@@ -163,6 +171,14 @@ class Rakuten
     }
 
     /**
+     * @return array
+     */
+    public function getParameter()
+    {
+        return implode('/', $this->params);
+    }
+
+    /**
      * Get Request Header
      *
      * @return string
@@ -179,8 +195,31 @@ class Rakuten
      */
     public function setLink($endpoint)
     {
-        $link = Rakuten::BASE_API_URL.'/'.self::API_NAME.'/'.self::API_VERSION.'/';
+        $link = Rakuten::BASE_API_URL.'/'.self::API_NAME_LINK_LOCATOR.'/'.self::API_VERSION.'/';
         $this->link = $link.$endpoint;
+    }
+
+    /**
+     * Set a value to the given URL parameter or remove it from the array if null.
+     *
+     * @param $parameter
+     * @param $value
+     *
+     * @return $this
+     */
+    protected function setParameter($parameter, $value)
+    {
+        if ($value === null) {
+            if (is_string($parameter)) {
+                unset($this->params[$parameter]);
+            } elseif (is_int($parameter)) {
+                $this->params[$parameter] = null;
+            }
+        } else {
+            $this->params[$parameter] = $value;
+        }
+
+        return $this;
     }
 
     /**
@@ -229,6 +268,35 @@ class Rakuten
     }
 
     /**
+     * Get Advertisers of Account
+     *
+     * @return object
+     */
+    public function merchant()
+    {
+        $this->setHeader(self::HEADER_TYPE_BEARER);
+        $link = Rakuten::BASE_API_URL.'/'.self::API_NAME_ADVERTISER_SEARCH.'/'.self::API_VERSION;
+
+
+        $curl     = new Curl;
+        $response = $curl->get($link,  '', $this->getHeader());
+
+        $xmlData       = new SimpleXMLElement(XMLHelper::tidy($response));
+        $checkResponse = json_decode($xmlData);
+
+        /**
+         * Delay Request Data for given seconds.
+         *
+         * @return time();
+         */
+        if (isset($checkResponse->fault)) {
+            sleep(ceil($this->delay / $this->requestPerMinute));
+        }
+
+        return $xmlData;
+    }
+
+    /**
      * Allows you to download advertiser information by specifying
      * the Application Status ID for the Application Status that
      * you want to get the List of Merchants for.
@@ -258,6 +326,11 @@ class Rakuten
         $xmlData       = new SimpleXMLElement(XMLHelper::tidy($response));
         $checkResponse = json_decode($xmlData);
 
+        /**
+         * Delay Request Data for given seconds.
+         *
+         * @return time();
+         */
         if (isset($checkResponse->fault)) {
             sleep(ceil($this->delay / $this->requestPerMinute));
         }
@@ -349,9 +422,9 @@ class Rakuten
      *                                feed to obtain it (not the Advertiser Category Table listed
      *                                in the Publisher Help Center).
      *                                Optional, use -1 as the default value.
-     * @param Carbon|null $startDate  This is the start date for the creative, formatted MMDDYYYY.
+     * @param null $startDate  This is the start date for the creative, formatted MMDDYYYY.
      *                                Optional, use null as the default value.
-     * @param Carbon|null $endDate    This is the end date for the creative, formatted MMDDYYYY.
+     * @param null $endDate    This is the end date for the creative, formatted MMDDYYYY.
      *                                Optional, use null as the default value.
      * @param int         $size       This is the banner size code.
      *                                Optional, use -1 as the default value.
@@ -368,14 +441,42 @@ class Rakuten
     public function bannerLinks(
         $merchantId = -1,
         $categoryId = -1,
-        Carbon $startDate = null,
-        Carbon $endDate = null,
+        $startDate = null,
+        $endDate = null,
         $size = -1,
         $campaignId = -1,
         $page = 1
     ) {
-        $data = [];
 
-        return $data;
+        $startD = (isset($startDate)) ? str_replace('-', '', $startDate) : null;
+        $endD   = (isset($endDate)) ? str_replace('-', '', $endDate) : null;
+
+        $this->setParameter(0, $merchantId);
+        $this->setParameter(1, $categoryId);
+        $this->setParameter(2, $startD);
+        $this->setParameter(3, $endD);
+        $this->setParameter(4, $size);
+        $this->setParameter(5, $campaignId);
+        $this->setParameter(6, $page);
+
+        $this->setHeader(self::HEADER_TYPE_BEARER);
+        $this->setLink(self::BANNER_LINKS.'/'.$this->getParameter());
+
+        $curl     = new Curl;
+        $response = $curl->get($this->getLink(),  '', $this->getHeader());
+
+        $xmlData       = new SimpleXMLElement(XMLHelper::tidy($response));
+        $checkResponse = json_decode($xmlData);
+
+        /**
+         * Delay Request Data for given seconds.
+         *
+         * @return time();
+         */
+        if (isset($checkResponse->fault)) {
+            sleep(ceil($this->delay / $this->requestPerMinute));
+        }
+
+        return $xmlData;
     }
 }
