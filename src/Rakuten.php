@@ -15,10 +15,14 @@ class Rakuten
 
     const API_NAME_ADVERTISER_SEARCH = 'advertisersearch';
     const API_NAME_LINK_LOCATOR      = 'linklocator';
+    const API_NAME_ADVANCED_REPORT   = 'advancedreports';
+
     const API_VERSION  = '1.0';
 
     const TOKEN_END_POINT = '/token';
-    const TOKEN_HEADER = 'a3NQelhIWEd6TERXME85NHNqeDdGcHpYZW1nYTpNTTNkM3YzdlZ4eUk1T0o5c0xIcDRLZlpxN1Fh';
+
+    const TOKEN_HEADER   = 'a3NQelhIWEd6TERXME85NHNqeDdGcHpYZW1nYTpNTTNkM3YzdlZ4eUk1T0o5c0xIcDRLZlpxN1Fh';
+    const SECURITY_TOKEN = '8e366539570f83b3fc382fa88f83341fd2febf953e81c5e601d863ab9308fb0f';
 
     const HEADER_TYPE_BASIC  = 'Basic';
     const HEADER_TYPE_BEARER = 'Bearer';
@@ -193,9 +197,13 @@ class Rakuten
      *
      * @param $endpoint
      */
-    public function setLink($endpoint)
+    public function setLink($endpoint, $name = null)
     {
-        $link = Rakuten::BASE_API_URL.'/'.self::API_NAME_LINK_LOCATOR.'/'.self::API_VERSION.'/';
+        if (!isset($name)) {
+            $name = self::API_NAME_LINK_LOCATOR;
+        }
+
+        $link = Rakuten::BASE_API_URL.'/'.$name.'/'.self::API_VERSION.'/';
         $this->link = $link.$endpoint;
     }
 
@@ -461,6 +469,68 @@ class Rakuten
 
         $this->setHeader(self::HEADER_TYPE_BEARER);
         $this->setLink(self::BANNER_LINKS.'/'.$this->getParameter());
+
+        $curl     = new Curl;
+        $response = $curl->get($this->getLink(),  '', $this->getHeader());
+
+        $xmlData       = new SimpleXMLElement(XMLHelper::tidy($response));
+        $checkResponse = json_decode($xmlData);
+
+        /**
+         * Delay Request Data for given seconds.
+         *
+         * @return time();
+         */
+        if (isset($checkResponse->fault)) {
+            sleep(ceil($this->delay / $this->requestPerMinute));
+        }
+
+        return $xmlData;
+    }
+
+    /**
+     * Provides you the available advanced reports.
+     *
+     * To obtain specific reports, you can filter this by
+     * add $nid & $mid.
+     *
+     * @params string  | token     Security Token provided in the Publisher
+     *                             Dashboard.
+     *
+     * @params integer | $reportId Numeric representation of desired report
+     *                             Payment History Summary ['1'],
+     *                             Advertiser Payments History ['2'],
+     *                             Payment Details Report ['3']
+     *
+     * @params integer | $startDate Begin Date (Format: YYYYMMDD)
+     * @params integer | $endDate	End Date (Format: YYYYMMDD)
+     *
+     * @params integer | $nid       Filter by Network ID
+     * @params integer | $mid       Filter by Merchant ID
+     *
+     * @return object
+     */
+    public function advancedReports(
+        $reportId,
+        $startDate,
+        $endDate,
+        $nid = null,
+        $mid = null
+    )
+    {
+        $startD = (isset($startDate)) ? str_replace('-', '', $startDate) : null;
+        $endD   = (isset($endDate)) ? str_replace('-', '', $endDate) : null;
+
+
+        $this->setHeader(self::HEADER_TYPE_BEARER);
+        $this->setParameter(0, 'token='.self::SECURITY_TOKEN);
+        $this->setParameter(1, 'reportid='.$reportId);
+        $this->setParameter(2, 'bdate='.$startD);
+        $this->setParameter(3, 'edate='.$endD);
+
+        $params = implode('&', $this->params);
+
+        $this->setLink('?'.$params, self::API_NAME_ADVANCED_REPORT);
 
         $curl     = new Curl;
         $response = $curl->get($this->getLink(),  '', $this->getHeader());
