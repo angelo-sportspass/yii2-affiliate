@@ -290,16 +290,6 @@ class Rakuten
         $response = $curl->get($link,  '', $this->getHeader());
 
         $xmlData       = new SimpleXMLElement(XMLHelper::tidy($response));
-        $checkResponse = json_decode($xmlData);
-
-        /**
-         * Delay Request Data for given seconds.
-         *
-         * @return time();
-         */
-        if (isset($checkResponse->fault)) {
-            sleep(ceil($this->delay / $this->requestPerMinute));
-        }
 
         return $xmlData;
     }
@@ -332,16 +322,6 @@ class Rakuten
         $response = $curl->get($this->getLink(),  '', $this->getHeader());
 
         $xmlData       = new SimpleXMLElement(XMLHelper::tidy($response));
-        $checkResponse = json_decode($xmlData);
-
-        /**
-         * Delay Request Data for given seconds.
-         *
-         * @return time();
-         */
-        if (isset($checkResponse->fault)) {
-            sleep(ceil($this->delay / $this->requestPerMinute));
-        }
 
         return $xmlData;
     }
@@ -363,11 +343,6 @@ class Rakuten
         $response = $curl->get($this->getLink(),  '', $this->getHeader());
 
         $xmlData  = new SimpleXMLElement(XMLHelper::tidy($response));
-        $checkResponse = json_decode($xmlData);
-
-        if (isset($checkResponse->fault)) {
-            sleep(ceil($this->delay / $this->requestPerMinute));
-        }
 
         return $xmlData;
     }
@@ -474,16 +449,6 @@ class Rakuten
         $response = $curl->get($this->getLink(),  '', $this->getHeader());
 
         $xmlData       = new SimpleXMLElement(XMLHelper::tidy($response));
-        $checkResponse = json_decode($xmlData);
-
-        /**
-         * Delay Request Data for given seconds.
-         *
-         * @return time();
-         */
-        if (isset($checkResponse->fault)) {
-            sleep(ceil($this->delay / $this->requestPerMinute));
-        }
 
         return $xmlData;
     }
@@ -536,16 +501,6 @@ class Rakuten
         $response = $curl->get($this->getLink(),  '', $this->getHeader());
 
         $xmlData       = new SimpleXMLElement(XMLHelper::tidy($response));
-        $checkResponse = json_decode($xmlData);
-
-        /**
-         * Delay Request Data for given seconds.
-         *
-         * @return time();
-         */
-        if (isset($checkResponse->fault)) {
-            sleep(ceil($this->delay / $this->requestPerMinute));
-        }
 
         return $xmlData;
     }
