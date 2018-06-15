@@ -9,6 +9,7 @@ class Affiliate
 {
     const AFFILIATE_RAKUTEN = 'rakuten';
     const AFFILIATE_COMMISSION_FACTORY = 'commission';
+    const AFFILIATE_EXPERIENCE = 'experience';
 
     /**
      * Specify the type of affiliate
@@ -64,13 +65,16 @@ class Affiliate
 
                 $model = new Rakuten($this->options);
                 $model->loadAccessToken();
-
                 break;
 
             case self::AFFILIATE_COMMISSION_FACTORY;
 
                 $model = new Commission($this->options);
+                break;
 
+            case self::AFFILIATE_EXPERIENCE;
+
+                $model = new Experience($this->options);
                 break;
         endswitch;
 
